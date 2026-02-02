@@ -1,5 +1,5 @@
 # Build arguments for multi-version support
-ARG PYTHON_VERSION=3.8
+ARG PYTHON_VERSION=3.12
 ARG BASE_IMAGE=amazonlinux:2
 
 # Use parameterized base image to match AWS Lambda runtime environment
