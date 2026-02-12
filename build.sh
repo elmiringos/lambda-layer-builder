@@ -12,8 +12,14 @@ if [[ "${BUILD_FROM_SOURCE}" != "true" ]]; then
     BUILD_FROM_SOURCE="false"
 fi
 
+# Architecture (x86_64 or arm64)
+ARCH="${3:-x86_64}"
+
 # Valid Python versions
 VALID_VERSIONS=("3.8" "3.9" "3.10" "3.11" "3.12")
+
+# Valid architectures
+VALID_ARCHS=("x86_64" "arm64")
 
 # Validate Python version
 if [[ ! " ${VALID_VERSIONS[*]} " =~ " ${PYTHON_VERSION} " ]]; then
@@ -22,21 +28,35 @@ if [[ ! " ${VALID_VERSIONS[*]} " =~ " ${PYTHON_VERSION} " ]]; then
     exit 1
 fi
 
-# Determine base image based on Python version
-# Python 3.12+ requires Amazon Linux 2023
-if [[ "$PYTHON_VERSION" == "3.12" ]]; then
-    BASE_IMAGE="amazonlinux:2023"
+# Validate architecture
+if [[ ! " ${VALID_ARCHS[*]} " =~ " ${ARCH} " ]]; then
+    echo "Error: Invalid architecture '${ARCH}'"
+    echo "Valid architectures: ${VALID_ARCHS[*]}"
+    exit 1
+fi
+
+# Map architecture to Docker platform
+if [[ "${ARCH}" == "x86_64" ]]; then
+    DOCKER_PLATFORM="linux/amd64"
 else
-    BASE_IMAGE="amazonlinux:2"
+    DOCKER_PLATFORM="linux/arm64"
 fi
 
 # Define variables
-DOCKER_IMAGE_NAME="lambda-layer-builder-py${PYTHON_VERSION}"
-OUTPUT_ZIP="python-layer-${PYTHON_VERSION}.zip"
+DOCKER_IMAGE_NAME="lambda-layer-builder-py${PYTHON_VERSION}-${ARCH}"
+
+# Output zip: use 4th arg if provided, otherwise default
+OUTPUT_ZIP="${4:-python-layer-${PYTHON_VERSION}-${ARCH}.zip}"
+
+# Validate output filename: must be a plain filename (no path separators or ..)
+if [[ "${OUTPUT_ZIP}" == */* ]] || [[ "${OUTPUT_ZIP}" == *..* ]]; then
+    echo "Error: OUTPUT_ZIP must be a plain filename (no paths). Got: '${OUTPUT_ZIP}'"
+    exit 1
+fi
 
 echo "============================================"
 echo "Building Lambda Layer for Python ${PYTHON_VERSION}"
-echo "Base image: ${BASE_IMAGE}"
+echo "Architecture: ${ARCH} (${DOCKER_PLATFORM})"
 echo "Build from source: ${BUILD_FROM_SOURCE}"
 echo "Output file: ${OUTPUT_ZIP}"
 echo "============================================"
@@ -44,8 +64,8 @@ echo "============================================"
 # Step 1: Build the Docker image with build args
 echo "Building the Docker image..."
 docker build \
+    --platform "${DOCKER_PLATFORM}" \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-    --build-arg BASE_IMAGE="${BASE_IMAGE}" \
     --build-arg BUILD_FROM_SOURCE="${BUILD_FROM_SOURCE}" \
     -t "${DOCKER_IMAGE_NAME}" .
 
