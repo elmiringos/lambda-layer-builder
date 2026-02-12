@@ -11,6 +11,9 @@ VALID_VERSIONS := 3.8 3.9 3.10 3.11 3.12
 AWS_REGION ?= us-east-1
 LAYER_NAME ?= python-dependencies
 
+# Build from source flag (set to "true" to compile packages from source for smaller zip)
+BUILD_FROM_SOURCE ?=
+
 # Derived variables
 OUTPUT_ZIP := python-layer-$(PYTHON_VERSION).zip
 LAMBDA_RUNTIME := python$(PYTHON_VERSION)
@@ -20,7 +23,7 @@ LAMBDA_RUNTIME := python$(PYTHON_VERSION)
 # Default target
 build: validate-version
 	@echo "Building Lambda layer for Python $(PYTHON_VERSION)..."
-	@./build.sh $(PYTHON_VERSION)
+	@./build.sh $(PYTHON_VERSION) $(BUILD_FROM_SOURCE)
 
 # Build all supported Python versions
 build-all:
@@ -29,7 +32,7 @@ build-all:
 		echo "========================================"; \
 		echo "Building for Python $$version..."; \
 		echo "========================================"; \
-		./build.sh $$version; \
+		./build.sh $$version $(BUILD_FROM_SOURCE); \
 	done
 
 # Clean generated files for specific version
@@ -74,12 +77,15 @@ help:
 	@echo "  make build-all"
 	@echo "  make test PYTHON_VERSION=3.11"
 	@echo "  make upload PYTHON_VERSION=3.11 LAYER_NAME=my-layer"
+	@echo "  make build BUILD_FROM_SOURCE=true"
+	@echo "  make build PYTHON_VERSION=3.11 BUILD_FROM_SOURCE=true"
 	@echo "  make clean-all"
 	@echo ""
 	@echo "Environment Variables:"
 	@echo "  PYTHON_VERSION  Python version to build (default: 3.12)"
 	@echo "  AWS_REGION      AWS region for upload/list (default: us-east-1)"
 	@echo "  LAYER_NAME      Base name for the Lambda layer (default: python-dependencies)"
+	@echo "  BUILD_FROM_SOURCE  Set to 'true' to compile from source for smaller zip"
 	@echo ""
 
 # Validate Python version

@@ -6,6 +6,12 @@ set -e
 # Default Python version
 PYTHON_VERSION="${1:-3.12}"
 
+# Build from source flag (compile packages instead of using pre-built wheels)
+BUILD_FROM_SOURCE=$(echo "${2:-false}" | tr '[:upper:]' '[:lower:]')
+if [[ "${BUILD_FROM_SOURCE}" != "true" ]]; then
+    BUILD_FROM_SOURCE="false"
+fi
+
 # Valid Python versions
 VALID_VERSIONS=("3.8" "3.9" "3.10" "3.11" "3.12")
 
@@ -31,6 +37,7 @@ OUTPUT_ZIP="python-layer-${PYTHON_VERSION}.zip"
 echo "============================================"
 echo "Building Lambda Layer for Python ${PYTHON_VERSION}"
 echo "Base image: ${BASE_IMAGE}"
+echo "Build from source: ${BUILD_FROM_SOURCE}"
 echo "Output file: ${OUTPUT_ZIP}"
 echo "============================================"
 
@@ -39,6 +46,7 @@ echo "Building the Docker image..."
 docker build \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg BASE_IMAGE="${BASE_IMAGE}" \
+    --build-arg BUILD_FROM_SOURCE="${BUILD_FROM_SOURCE}" \
     -t "${DOCKER_IMAGE_NAME}" .
 
 # Step 2: Run the container to extract the Lambda layer zip file
