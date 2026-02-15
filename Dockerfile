@@ -11,7 +11,7 @@ ARG BUILD_FROM_SOURCE
 # Install Python and dependencies
 # When BUILD_FROM_SOURCE=true, also install compiler toolchain
 RUN dnf update -y && \
-    dnf install -y python${PYTHON_VERSION} python${PYTHON_VERSION}-pip zip && \
+    dnf install -y python${PYTHON_VERSION} python${PYTHON_VERSION}-pip zip findutils && \
     if [ "${BUILD_FROM_SOURCE}" = "true" ]; then \
         dnf install -y \
             python${PYTHON_VERSION}-devel \
@@ -46,19 +46,21 @@ RUN mkdir -p /app/python && \
             -t /app/python; \
     fi
 
-# Strip and clean when building from source
+# Strip .so binaries when building from source (requires binutils)
 RUN if [ "${BUILD_FROM_SOURCE}" = "true" ]; then \
         find /app/python -name "*.so" -exec strip --strip-unneeded {} + 2>/dev/null || true; \
-        find /app/python -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -name "*.pyc" -delete 2>/dev/null || true; \
-        find /app/python -name "*.pyo" -delete 2>/dev/null || true; \
-        find /app/python -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -type d -name "test" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true; \
-        find /app/python -type d -name "doc" -exec rm -rf {} + 2>/dev/null || true; \
     fi
+
+# Clean up unnecessary files to reduce layer size
+RUN find /app/python -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -name "*.pyc" -delete 2>/dev/null || true && \
+    find /app/python -name "*.pyo" -delete 2>/dev/null || true && \
+    find /app/python -type d -name "*.dist-info" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -type d -name "tests" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -type d -name "test" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -type d -name "docs" -exec rm -rf {} + 2>/dev/null || true && \
+    find /app/python -type d -name "doc" -exec rm -rf {} + 2>/dev/null || true
 
 # Package the dependencies into a zip file
 RUN zip -r layer.zip python
