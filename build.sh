@@ -67,6 +67,7 @@ docker build \
     --platform "${DOCKER_PLATFORM}" \
     --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
     --build-arg BUILD_FROM_SOURCE="${BUILD_FROM_SOURCE}" \
+    --no-cache \
     -t "${DOCKER_IMAGE_NAME}" .
 
 # Step 2: Run the container to extract the Lambda layer zip file

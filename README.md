@@ -7,7 +7,7 @@ Build AWS Lambda layers with Python dependencies.
 - Make
 
 ## Usage
-1. Add packages to `requirements.txt`
+1. Make `requirements.txt`
 2. Run `make build`
 
 ## Make Targets
